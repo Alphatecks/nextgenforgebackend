@@ -95,4 +95,43 @@ async function updatePaymentByReference(reference, updates) {
   return normalizePaymentRow(data);
 }
 
-module.exports = { getPaymentByReference, updatePaymentByReference, upsertPayment };
+async function findPendingTransferPaymentMatch({ accountNumber, email, amount }) {
+  let query = supabase
+    .from("payments")
+    .select("*")
+    .eq("channel", "transfer")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (accountNumber) {
+    query = query.eq("virtual_account_number", accountNumber);
+  }
+  if (email) {
+    query = query.eq("email", email);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to find pending transfer payment: ${error.message}`);
+  }
+
+  const rows = Array.isArray(data) ? data : [];
+  if (!rows.length) {
+    return null;
+  }
+
+  if (amount == null) {
+    return normalizePaymentRow(rows[0]);
+  }
+
+  const exactAmountMatch = rows.find((row) => Number(row.amount) === Number(amount));
+  return normalizePaymentRow(exactAmountMatch || rows[0]);
+}
+
+module.exports = {
+  findPendingTransferPaymentMatch,
+  getPaymentByReference,
+  updatePaymentByReference,
+  upsertPayment,
+};

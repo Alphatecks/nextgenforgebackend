@@ -6,6 +6,7 @@ const {
   verifyPaystackTransaction,
 } = require("./paystackService");
 const {
+  findPendingTransferPaymentMatch,
   getPaymentByReference,
   updatePaymentByReference,
   upsertPayment,
@@ -47,6 +48,21 @@ function mergeStatus(currentStatus, incomingStatus) {
     return "failed";
   }
   return incomingStatus;
+}
+
+function extractTransferMatchingFields(data) {
+  return {
+    accountNumber:
+      data?.authorization?.receiver_bank_account_number ||
+      data?.authorization?.receiver_account_number ||
+      data?.dedicated_account?.account_number ||
+      data?.customer?.dedicated_account?.account_number ||
+      data?.metadata?.virtualAccountNumber ||
+      data?.metadata?.virtual_account_number ||
+      null,
+    email: data?.customer?.email || data?.customer_email || null,
+    amount: data?.amount ?? null,
+  };
 }
 
 async function initializeCardPayment(payload) {
@@ -175,37 +191,55 @@ async function getPaymentStatus(reference) {
 
 async function processWebhookEvent(event) {
   const data = event?.data || {};
-  const reference = data.reference;
-  if (!reference) {
-    return { updated: false, reason: "No reference on webhook event" };
+  const reference = data.reference || null;
+  let existing = reference ? await getPaymentByReference(reference) : null;
+
+  // For transfer payments, Paystack event reference may differ from local initialization reference.
+  // Match pending transfer by virtual account/email/amount as fallback.
+  if (!existing) {
+    const fields = extractTransferMatchingFields(data);
+    existing = await findPendingTransferPaymentMatch(fields);
   }
 
   const incomingStatus = resolveStatus(data.status || event.event);
-  const existing = await getPaymentByReference(reference);
   const status = mergeStatus(existing?.status, incomingStatus);
+  const targetReference = existing?.reference || reference;
+
+  if (!targetReference) {
+    return {
+      updated: false,
+      reason: "No usable payment reference found on webhook event",
+      event: event?.event || null,
+    };
+  }
 
   const updates = {
     status,
     paidAt: status === "success" ? new Date().toISOString() : null,
-    paystackResponse: data,
+    paystackResponse: {
+      ...(existing?.paystackResponse || {}),
+      webhookEvent: event?.event || null,
+      webhookReference: reference,
+      webhookData: data,
+    },
   };
 
   if (!existing) {
     await upsertPayment({
-      reference,
+      reference: targetReference,
       email: data.customer?.email || null,
       amount: data.amount || 0,
       currency: data.currency || "NGN",
       channel: data.channel || "unknown",
       status,
       paidAt: status === "success" ? new Date().toISOString() : null,
-      paystackResponse: data,
+      paystackResponse: updates.paystackResponse,
     });
-    return { updated: true, created: true, reference, status };
+    return { updated: true, created: true, reference: targetReference, status };
   }
 
-  await updatePaymentByReference(reference, updates);
-  return { updated: true, created: false, reference, status };
+  await updatePaymentByReference(targetReference, updates);
+  return { updated: true, created: false, reference: targetReference, status };
 }
 
 module.exports = {
