@@ -73,13 +73,9 @@ Set these on your Render service:
 - `PAYSTACK_WEBHOOK_SECRET` = Paystack webhook verification secret (fallbacks to secret key)
 - `APP_BASE_URL` = backend public URL used in callbacks
 - `EMAIL_ONBOARDING_URL` = onboarding/join link inserted in success email
+- `RESEND_API_KEY` = Resend API key
 - `EMAIL_FROM` = sender email address
 - `EMAIL_FROM_NAME` = sender display name
-- `SMTP_HOST` = SMTP host
-- `SMTP_PORT` = SMTP port
-- `SMTP_SECURE` = `true` for SMTPS, otherwise `false`
-- `SMTP_USER` = SMTP auth username
-- `SMTP_PASS` = SMTP auth password/app password
 - `PORT` = (Render provides this automatically, but keeping it set is safe)
 
 After questionnaire submission, backend checks if the same email already has a successful payment.

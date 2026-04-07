@@ -1,23 +1,13 @@
-const nodemailer = require("nodemailer");
-
-function parseBoolean(value) {
-  return String(value || "").trim().toLowerCase() === "true";
-}
-
 function getMailConfig() {
   return {
-    host: process.env.SMTP_HOST || "",
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: parseBoolean(process.env.SMTP_SECURE),
-    user: process.env.SMTP_USER || "",
-    pass: process.env.SMTP_PASS || "",
-    fromEmail: process.env.EMAIL_FROM || process.env.SMTP_USER || "",
+    resendApiKey: process.env.RESEND_API_KEY || "",
+    fromEmail: process.env.EMAIL_FROM || "",
     fromName: process.env.EMAIL_FROM_NAME || "NextGenForge",
   };
 }
 
 function hasRequiredMailConfig(config) {
-  return Boolean(config.host && config.port && config.user && config.pass && config.fromEmail);
+  return Boolean(config.resendApiKey && config.fromEmail);
 }
 
 async function sendEmail({ to, subject, html, text }) {
@@ -25,29 +15,34 @@ async function sendEmail({ to, subject, html, text }) {
   if (!hasRequiredMailConfig(config)) {
     return {
       sent: false,
-      reason: "Email settings are missing. Configure SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/EMAIL_FROM.",
+      reason: "Email settings are missing. Configure RESEND_API_KEY and EMAIL_FROM.",
     };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    auth: {
-      user: config.user,
-      pass: config.pass,
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.resendApiKey}`,
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      from: `${config.fromName} <${config.fromEmail}>`,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      text,
+    }),
   });
 
-  const info = await transporter.sendMail({
-    from: `${config.fromName} <${config.fromEmail}>`,
-    to,
-    subject,
-    html,
-    text,
-  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return {
+      sent: false,
+      reason: payload?.message || payload?.error?.message || `Resend request failed with ${response.status}`,
+    };
+  }
 
-  return { sent: true, messageId: info.messageId };
+  return { sent: true, messageId: payload?.id || null };
 }
 
 module.exports = { sendEmail };
