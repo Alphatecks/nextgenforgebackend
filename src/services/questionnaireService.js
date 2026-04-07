@@ -77,6 +77,20 @@ async function readQuestionnaires() {
   return (data || []).map(mapRowToQuestionnaire);
 }
 
+async function hasQuestionnaireForEmail(email) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const { count, error } = await supabase
+    .from("questionnaires")
+    .select("id", { count: "exact", head: true })
+    .ilike("email", normalizedEmail);
+
+  if (error) {
+    throw new Error(`Failed to check questionnaire email: ${error.message}`);
+  }
+
+  return (count || 0) > 0;
+}
+
 function mapRowToQuestionnaire(row) {
   return {
     id: row.id,
@@ -97,4 +111,4 @@ function mapRowToQuestionnaire(row) {
   };
 }
 
-module.exports = { readQuestionnaires, saveQuestionnaire };
+module.exports = { hasQuestionnaireForEmail, readQuestionnaires, saveQuestionnaire };

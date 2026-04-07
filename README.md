@@ -21,6 +21,7 @@ Default server URL: `http://localhost:4000`
 - `GET /health` - Health check.
 - `POST /api/questionnaires` - Submit a questionnaire.
 - `GET /api/questionnaires` - List all submitted questionnaires.
+- `GET /api/questionnaires/check-email?email=john@example.com` - Check whether an email already submitted.
 
 ## Submit Payload
 

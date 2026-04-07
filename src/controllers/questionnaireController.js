@@ -1,5 +1,6 @@
 const { questionnaireSchema } = require("../schemas/questionnaireSchema");
 const {
+  hasQuestionnaireForEmail,
   readQuestionnaires,
   saveQuestionnaire,
 } = require("../services/questionnaireService");
@@ -33,4 +34,18 @@ async function listQuestionnaires(_req, res, next) {
   }
 }
 
-module.exports = { submitQuestionnaire, listQuestionnaires };
+async function checkQuestionnaireEmail(req, res, next) {
+  try {
+    const email = String(req.query.email || "").trim();
+    if (!email) {
+      return next(new HttpError(400, "Email query parameter is required"));
+    }
+
+    const exists = await hasQuestionnaireForEmail(email);
+    return res.status(200).json({ email, exists });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+module.exports = { checkQuestionnaireEmail, submitQuestionnaire, listQuestionnaires };
