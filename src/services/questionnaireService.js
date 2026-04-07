@@ -1,28 +1,27 @@
 const { randomUUID } = require("node:crypto");
-const { query } = require("../db");
+const { supabase } = require("../supabase");
 
 async function saveQuestionnaire(payload) {
   const id = randomUUID();
-  const sql = `
-    INSERT INTO questionnaires (
+  const { data, error } = await supabase
+    .from("questionnaires")
+    .insert({
       id,
-      email,
-      full_name,
-      whatsapp_number,
-      expectations,
-      why_selected,
-      referred_by,
-      proficiency_level,
-      active_enrollment,
-      trained_on_agentic_platform,
-      daily_commit_hours,
-      payment_option,
-      source
-    )
-    VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-    )
-    RETURNING
+      email: payload.email,
+      full_name: payload.fullName,
+      whatsapp_number: payload.whatsappNumber,
+      expectations: payload.expectations,
+      why_selected: payload.whySelected,
+      referred_by: payload.referredBy || null,
+      proficiency_level: payload.proficiencyLevel,
+      active_enrollment: payload.activeEnrollment,
+      trained_on_agentic_platform: payload.trainedOnAgenticPlatform,
+      daily_commit_hours: payload.dailyCommitHours,
+      payment_option: payload.paymentOption,
+      source: payload.source || null,
+    })
+    .select(
+      `
       id,
       email,
       full_name,
@@ -37,52 +36,45 @@ async function saveQuestionnaire(payload) {
       payment_option,
       source,
       submitted_at
-  `;
+    `,
+    )
+    .single();
 
-  const values = [
-    id,
-    payload.email,
-    payload.fullName,
-    payload.whatsappNumber,
-    payload.expectations,
-    payload.whySelected,
-    payload.referredBy || null,
-    payload.proficiencyLevel,
-    payload.activeEnrollment,
-    payload.trainedOnAgenticPlatform,
-    payload.dailyCommitHours,
-    payload.paymentOption,
-    payload.source || null,
-  ];
+  if (error) {
+    throw new Error(`Failed to save questionnaire: ${error.message}`);
+  }
 
-  const { rows } = await query(sql, values);
-  return mapRowToQuestionnaire(rows[0]);
+  return mapRowToQuestionnaire(data);
 }
 
 async function readQuestionnaires() {
-  const { rows } = await query(
-    `
-      SELECT
-        id,
-        email,
-        full_name,
-        whatsapp_number,
-        expectations,
-        why_selected,
-        referred_by,
-        proficiency_level,
-        active_enrollment,
-        trained_on_agentic_platform,
-        daily_commit_hours,
-        payment_option,
-        source,
-        submitted_at
-      FROM questionnaires
-      ORDER BY submitted_at DESC
+  const { data, error } = await supabase
+    .from("questionnaires")
+    .select(
+      `
+      id,
+      email,
+      full_name,
+      whatsapp_number,
+      expectations,
+      why_selected,
+      referred_by,
+      proficiency_level,
+      active_enrollment,
+      trained_on_agentic_platform,
+      daily_commit_hours,
+      payment_option,
+      source,
+      submitted_at
     `,
-  );
+    )
+    .order("submitted_at", { ascending: false });
 
-  return rows.map(mapRowToQuestionnaire);
+  if (error) {
+    throw new Error(`Failed to read questionnaires: ${error.message}`);
+  }
+
+  return (data || []).map(mapRowToQuestionnaire);
 }
 
 function mapRowToQuestionnaire(row) {

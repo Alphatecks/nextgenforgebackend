@@ -9,10 +9,8 @@ Node.js + Express backend that accepts and stores NextGenForge enrollment questi
 2. Create environment file:
    - `cp .env.example .env`
 3. Set database connection:
-   - Add your Supabase Postgres URL to `SUPABASE_DB_URL` in `.env`
-   - Keep `DB_SSL=true` for Supabase/Render
-   - Set `DB_FORCE_IPV4=true` on Render to avoid IPv6 route failures
-   - Use `SUPABASE_DB_URL` as the single source of truth for DB connection
+   - Add `SUPABASE_URL` to `.env`
+   - Add `SUPABASE_SERVICE_ROLE_KEY` to `.env`
 4. Start development server:
    - `npm run dev`
 
@@ -53,15 +51,12 @@ Default server URL: `http://localhost:4000`
 ## Notes
 
 - Submissions are stored in Supabase Postgres (`questionnaires` table).
-- SQL schema lives in `data/questionnaires.sql` and is auto-applied on server startup.
+- Use `data/questionnaires.sql` in Supabase SQL Editor to create/update the table schema.
 
-## Render + Supabase Environment Variables
+## Render + Supabase Environment Variables (JS Client)
 
 Set these on your Render service:
 
-- `SUPABASE_DB_URL` = Supabase pooled/direct Postgres connection string
-- `DB_SSL` = `true`
-- `DB_FORCE_IPV4` = `true` (recommended for Render)
+- `SUPABASE_URL` = your Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY` = service role key from Supabase project settings
 - `PORT` = (Render provides this automatically, but keeping it set is safe)
-
-For best reliability on Render, use the Supabase **Connection Pooler** URL (port `6543`) as `SUPABASE_DB_URL`.
