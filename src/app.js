@@ -1,10 +1,12 @@
 const cors = require("cors");
 const express = require("express");
+const paymentRoutes = require("./routes/paymentRoutes");
 const questionnaireRoutes = require("./routes/questionnaireRoutes");
 
 const app = express();
 
 app.use(cors());
+app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
@@ -12,6 +14,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/questionnaires", questionnaireRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

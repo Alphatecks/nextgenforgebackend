@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "check": "node --check src/server.js && node --check src/app.js && node --check src/supabase.js && node --check src/routes/questionnaireRoutes.js && node --check src/controllers/questionnaireController.js && node --check src/services/questionnaireService.js && node --check src/schemas/questionnaireSchema.js"
+    "check": "node --check src/server.js && node --check src/app.js && node --check src/supabase.js && node --check src/routes/questionnaireRoutes.js && node --check src/controllers/questionnaireController.js && node --check src/services/questionnaireService.js && node --check src/schemas/questionnaireSchema.js && node --check src/routes/paymentRoutes.js && node --check src/controllers/paymentController.js && node --check src/services/paymentService.js && node --check src/services/paymentsRepository.js && node --check src/services/paystackService.js && node --check src/schemas/paymentSchema.js"
   },
   "keywords": [],
   "author": "",
