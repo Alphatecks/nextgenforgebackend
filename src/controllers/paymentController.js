@@ -64,8 +64,12 @@ async function getPaymentByReference(req, res, next) {
     }
 
     const paymentStatus = await getPaymentStatus(parsed.data.reference);
+    const resolvedStatus = paymentStatus?.payment?.status || "pending";
+    const paid = resolvedStatus === "success";
     return res.status(200).json({
       message: "Payment status fetched successfully",
+      status: resolvedStatus,
+      paid,
       data: paymentStatus,
     });
   } catch (error) {

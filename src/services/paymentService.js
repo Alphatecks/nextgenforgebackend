@@ -23,14 +23,34 @@ function amountToMinorUnit(amount) {
 
 function resolveStatus(paystackStatus) {
   const normalized = String(paystackStatus || "").toLowerCase();
-  if (normalized === "success" || normalized.includes("success")) {
+  if (
+    normalized === "success" ||
+    normalized === "successful" ||
+    normalized === "paid" ||
+    normalized.includes("success") ||
+    normalized.includes("paid")
+  ) {
     return "success";
+  }
+  if (
+    normalized === "pending" ||
+    normalized === "processing" ||
+    normalized.includes("pending") ||
+    normalized.includes("processing")
+  ) {
+    return "pending";
   }
   if (
     normalized === "failed" ||
     normalized === "abandoned" ||
     normalized === "reversed" ||
-    normalized.includes("failed")
+    normalized === "cancelled" ||
+    normalized.includes("failed") ||
+    normalized.includes("abandon") ||
+    normalized.includes("reverse") ||
+    normalized.includes("cancel") ||
+    normalized.includes("declin") ||
+    normalized.includes("error")
   ) {
     return "failed";
   }
@@ -48,6 +68,13 @@ function mergeStatus(currentStatus, incomingStatus) {
     return "failed";
   }
   return incomingStatus;
+}
+
+function resolvePaidAt(existingPaidAt, status) {
+  if (status !== "success") {
+    return null;
+  }
+  return existingPaidAt || new Date().toISOString();
 }
 
 function extractTransferMatchingFields(data) {
@@ -166,7 +193,7 @@ async function getPaymentStatus(reference) {
 
   const updates = {
     status: nextStatus,
-    paidAt: nextStatus === "success" ? new Date().toISOString() : null,
+    paidAt: resolvePaidAt(existing?.paidAt, nextStatus),
     paystackResponse: paystackVerification,
   };
 
@@ -179,7 +206,7 @@ async function getPaymentStatus(reference) {
         currency: paystackVerification.currency || "NGN",
         channel: paystackVerification.channel || "unknown",
         status: nextStatus,
-        paidAt: nextStatus === "success" ? new Date().toISOString() : null,
+        paidAt: resolvePaidAt(null, nextStatus),
         paystackResponse: paystackVerification,
       });
 
@@ -215,7 +242,7 @@ async function processWebhookEvent(event) {
 
   const updates = {
     status,
-    paidAt: status === "success" ? new Date().toISOString() : null,
+    paidAt: resolvePaidAt(existing?.paidAt, status),
     paystackResponse: {
       ...(existing?.paystackResponse || {}),
       webhookEvent: event?.event || null,
@@ -232,7 +259,7 @@ async function processWebhookEvent(event) {
       currency: data.currency || "NGN",
       channel: data.channel || "unknown",
       status,
-      paidAt: status === "success" ? new Date().toISOString() : null,
+      paidAt: resolvePaidAt(null, status),
       paystackResponse: updates.paystackResponse,
     });
     return { updated: true, created: true, reference: targetReference, status };
