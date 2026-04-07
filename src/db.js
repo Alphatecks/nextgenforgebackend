@@ -3,10 +3,10 @@ const path = require("node:path");
 const dns = require("node:dns");
 const { Pool } = require("pg");
 
-const databaseUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+const databaseUrl = process.env.SUPABASE_DB_URL;
 
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required. Set your Supabase Postgres connection string.");
+  throw new Error("SUPABASE_DB_URL is required. Set your Supabase Postgres connection string.");
 }
 
 const useSsl = process.env.DB_SSL !== "false";

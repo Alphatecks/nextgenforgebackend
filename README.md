@@ -9,9 +9,10 @@ Node.js + Express backend that accepts and stores NextGenForge enrollment questi
 2. Create environment file:
    - `cp .env.example .env`
 3. Set database connection:
-   - Add your Supabase Postgres URL to `DATABASE_URL` in `.env`
+   - Add your Supabase Postgres URL to `SUPABASE_DB_URL` in `.env`
    - Keep `DB_SSL=true` for Supabase/Render
    - Set `DB_FORCE_IPV4=true` on Render to avoid IPv6 route failures
+   - Use `SUPABASE_DB_URL` as the single source of truth for DB connection
 4. Start development server:
    - `npm run dev`
 
@@ -58,9 +59,9 @@ Default server URL: `http://localhost:4000`
 
 Set these on your Render service:
 
-- `DATABASE_URL` = Supabase pooled/direct Postgres connection string
+- `SUPABASE_DB_URL` = Supabase pooled/direct Postgres connection string
 - `DB_SSL` = `true`
 - `DB_FORCE_IPV4` = `true` (recommended for Render)
 - `PORT` = (Render provides this automatically, but keeping it set is safe)
 
-For best reliability on Render, use the Supabase **Connection Pooler** URL (port `6543`) as `DATABASE_URL`.
+For best reliability on Render, use the Supabase **Connection Pooler** URL (port `6543`) as `SUPABASE_DB_URL`.
