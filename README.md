@@ -105,6 +105,8 @@ If yes, it sends the approval email from `src/email-templates/congratulations-ap
 
 `POST /api/payments/initialize-transfer`
 
+`phone` is required and must be in E.164 format (example: `+2348012345678`).
+
 ```json
 {
   "email": "john@example.com",

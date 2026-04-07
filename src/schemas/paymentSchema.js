@@ -29,7 +29,11 @@ const initializeTransferPaymentSchema = z.object({
   currency: z.string().trim().toUpperCase().optional().default("NGN"),
   firstName: z.string().trim().min(1, "First name is required"),
   lastName: z.string().trim().min(1, "Last name is required"),
-  phone: z.string().trim().optional(),
+  phone: z
+    .string()
+    .trim()
+    .min(1, "Phone number is required")
+    .regex(/^\+[1-9]\d{7,14}$/, "Phone number must be in E.164 format (e.g. +2348012345678)"),
   preferredBank: z.string().trim().optional(),
   metadata: z.record(z.string(), z.any()).optional().default({}),
   questionnaireId: z.string().trim().optional(),
