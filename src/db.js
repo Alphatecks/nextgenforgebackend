@@ -10,7 +10,7 @@ if (!databaseUrl) {
 }
 
 const useSsl = process.env.DB_SSL !== "false";
-const forceIpv4 = process.env.DB_FORCE_IPV4 === "true";
+const forceIpv4 = process.env.DB_FORCE_IPV4 !== "false";
 
 const pool = new Pool({
   connectionString: databaseUrl,
