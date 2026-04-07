@@ -129,9 +129,33 @@ async function findPendingTransferPaymentMatch({ accountNumber, email, amount })
   return normalizePaymentRow(exactAmountMatch || rows[0]);
 }
 
+async function getLatestSuccessfulPaymentByEmail(email) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("payments")
+    .select("*")
+    .eq("status", "success")
+    .ilike("email", normalizedEmail)
+    .order("paid_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to fetch successful payment by email: ${error.message}`);
+  }
+
+  return normalizePaymentRow(data);
+}
+
 module.exports = {
   findPendingTransferPaymentMatch,
   getPaymentByReference,
+  getLatestSuccessfulPaymentByEmail,
   updatePaymentByReference,
   upsertPayment,
 };

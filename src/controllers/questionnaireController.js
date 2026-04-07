@@ -4,6 +4,7 @@ const {
   readQuestionnaires,
   saveQuestionnaire,
 } = require("../services/questionnaireService");
+const { sendPaymentSuccessEmailIfEligible } = require("../services/paymentNotificationService");
 const { HttpError } = require("../utils/httpError");
 
 function pickFirstValue(source, keys) {
@@ -68,6 +69,21 @@ async function submitQuestionnaire(req, res, next) {
     }
 
     const saved = await saveQuestionnaire(parsed.data);
+    try {
+      const emailResult = await sendPaymentSuccessEmailIfEligible({
+        email: saved.email,
+        recipientName: saved.fullName,
+      });
+      if (!emailResult.sent) {
+        console.warn(
+          `[payment-success-email] skipped for ${saved.email} (${emailResult.reason || "unknown-reason"})`,
+        );
+      }
+    } catch (notificationError) {
+      console.error(
+        `[payment-success-email] failed for ${saved.email}: ${notificationError.message}`,
+      );
+    }
 
     return res.status(201).json({
       message: "Questionnaire submitted successfully",
